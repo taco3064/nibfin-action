@@ -1,0 +1,105 @@
+name: Nibfin
+description: Invoke the immutable official Nibfin Core entry with protected host capabilities
+branding:
+  icon: git-pull-request
+  color: purple
+inputs:
+  bundle_commit:
+    description: Approved Core commit; must match this Action release
+    required: true
+  host_commit:
+    description: Approved full SHA of prepared public host checkout
+    required: true
+  mode:
+    description: lookup, resolve, execute, compute, wake or registration
+    required: true
+  input:
+    description: Bounded JSON object using released per-mode keys
+    required: true
+  resolution:
+    description: Retained Resolve reference
+    required: false
+  read_token:
+    description: Hosted read identity only
+    required: false
+  host_token:
+    description: Hosted management identity only
+    required: false
+outputs:
+  request:
+    description: Core request; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.request }}
+  reason:
+    description: Core reason; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.reason }}
+  execution_mode:
+    description: Core execution_mode; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.execution_mode }}
+  status:
+    description: Core status; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.status }}
+  selected:
+    description: Core selected; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.selected }}
+  runs_on:
+    description: Core runs_on; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.runs_on }}
+  resolution:
+    description: Core resolution; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.resolution }}
+  reference:
+    description: Core reference; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.reference }}
+  issue:
+    description: Core issue; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.issue }}
+  response:
+    description: Core response; status is not Issue delivery proof
+    value: ${{ steps.entry.outputs.response }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      with:
+        node-version: '22.23.3'
+    - name: Validate transport
+      shell: bash
+      env:
+        NIBFIN_BUNDLE_COMMIT: ${{ inputs.bundle_commit }}
+        NIBFIN_HOST_COMMIT: ${{ inputs.host_commit }}
+        NIBFIN_MODE: ${{ inputs.mode }}
+        NIBFIN_INPUT: ${{ inputs.input }}
+        NIBFIN_RESOLUTION: ${{ inputs.resolution }}
+        NIBFIN_ACTION_ROOT: ${{ github.action_path }}
+      run: node "$NIBFIN_ACTION_ROOT/src/entry.mjs" validate
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      with:
+        repository: taco3064/nibfin
+        ref: ae64437d072d16ebad1ed119f6f7ab9c6b459e44
+        path: nibfin-core
+        persist-credentials: false
+    - name: Verify Core and install locked dependencies
+      shell: bash
+      env:
+        NIBFIN_BUNDLE_COMMIT: ${{ inputs.bundle_commit }}
+        NIBFIN_HOST_COMMIT: ${{ inputs.host_commit }}
+        NIBFIN_MODE: ${{ inputs.mode }}
+        NIBFIN_INPUT: ${{ inputs.input }}
+        NIBFIN_RESOLUTION: ${{ inputs.resolution }}
+        NIBFIN_ACTION_ROOT: ${{ github.action_path }}
+      run: |
+        node "$NIBFIN_ACTION_ROOT/src/entry.mjs" content
+        npm ci --prefix "$GITHUB_WORKSPACE/nibfin-core" --omit=dev --ignore-scripts --no-audit --no-fund
+        npm ci --prefix "$GITHUB_WORKSPACE/nibfin-host" --ignore-scripts --no-audit --no-fund
+    - id: entry
+      shell: bash
+      env:
+        NIBFIN_BUNDLE_COMMIT: ${{ inputs.bundle_commit }}
+        NIBFIN_HOST_COMMIT: ${{ inputs.host_commit }}
+        NIBFIN_MODE: ${{ inputs.mode }}
+        NIBFIN_INPUT: ${{ inputs.input }}
+        NIBFIN_RESOLUTION: ${{ inputs.resolution }}
+        NIBFIN_READ_TOKEN: ${{ inputs.mode != 'execute' && inputs.mode != 'compute' && inputs.read_token || '' }}
+        NIBFIN_HOST_TOKEN: ${{ inputs.mode != 'execute' && inputs.mode != 'compute' && inputs.host_token || '' }}
+        NIBFIN_ACTION_ROOT: ${{ github.action_path }}
+      run: node "$NIBFIN_ACTION_ROOT/src/entry.mjs"

@@ -28,5 +28,11 @@ jobs:
           echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
       - name: Validate GitHub workflow syntax and expressions
         run: actionlint -color -shellcheck= -pyflakes=
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: taco3064/nibfin
+          ref: ae64437d072d16ebad1ed119f6f7ab9c6b459e44
+          path: .test-core
+          persist-credentials: false
       - name: Check maintained source and run available product tests
         run: node tooling/check.mjs
