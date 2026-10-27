@@ -1,0 +1,1 @@
+{"name":"@nibfin/action","version":"0.1.0","private":true,"type":"module","scripts":{"test":"node --test test/*.test.mjs","prepare:release":"node tooling/package.mjs","verify:release":"node tooling/package.mjs --verify"},"devDependencies":{"jose":"6.2.13","yaml":"2.8.1"},"engines":{"node":">=22 <23","npm":">=10 <11"}}
