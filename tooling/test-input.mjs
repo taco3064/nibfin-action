@@ -38,4 +38,4 @@ for(const f of pin.testFixtures){
   const bytes=readFileSync(join(source,f.path));need(hash(bytes)===f.sha256,'test-fixture');
   writeFileSync(join('.test-fixtures',f.path.split('/').pop()),bytes.toString().replaceAll('../src/','../.test-core/src/'));
 }
-console.log('Installed exact reviewed #233 distribution with PR246 correction with lifecycle scripts disabled; source-contract input only.');
+console.log('Installed the exact pinned Core candidate with lifecycle scripts disabled; source-contract input only.');
