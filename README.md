@@ -3,7 +3,7 @@
 Thin Action adapter for the reviewed, integrated public Nibfin distribution from
 [nibfin #233](https://github.com/taco3064/nibfin/issues/233), with the reviewed
 [registration/runtime correction](https://github.com/taco3064/nibfin/pull/246), source
-`9a3dc1148df17725c2e6484367a347ec03afd201`. Core owns authorization, routing,
+`0c67785b9afc92116f055d4d2a5653b7d6eb927b`. Core owns authorization, routing,
 policy, custody, lifecycle, recovery, independent reviews, scheduling and merge.
 The Action supplies no grant, repair capability, retry loop, timer service or second controller.
 
