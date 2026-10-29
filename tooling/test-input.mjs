@@ -16,7 +16,7 @@ if(build){
   need(JSON.stringify(recipe.modes.map(f=>f.path))===JSON.stringify(pin.files.map(f=>f.path)),'test-modes');
   for(const f of recipe.modes){need([384,420,493].includes(f.mode),'test-mode');regular(source,f.path);chmodSync(join(source,f.path),f.mode);}
   // npm pack preserves source permission bits. Reproduce the accepted tar metadata,
-  // including seven deliberately private files, rather than repinning a new tarball.
+  // using the exact tracked modes of this reviewed producer correction.
   const mask=process.umask(0o022);
   try{execFileSync(process.execPath,[join(source,'tooling/release.mjs')],{cwd:source,stdio:'inherit',
     env:Object.fromEntries(Object.entries({...process.env,NIBFIN_RELEASE_BASE:recipe.source.base}).filter(([k])=>k!=='NIBFIN_RELEASE_COMMIT'))});}
@@ -38,4 +38,4 @@ for(const f of pin.testFixtures){
   const bytes=readFileSync(join(source,f.path));need(hash(bytes)===f.sha256,'test-fixture');
   writeFileSync(join('.test-fixtures',f.path.split('/').pop()),bytes.toString().replaceAll('../src/','../.test-core/src/'));
 }
-console.log('Installed exact reviewed #233 archive with lifecycle scripts disabled; source-contract input only.');
+console.log('Installed exact reviewed #233 distribution with PR246 correction with lifecycle scripts disabled; source-contract input only.');
