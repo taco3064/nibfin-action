@@ -3,13 +3,13 @@
 Thin Action adapter for the reviewed, integrated public Nibfin distribution from
 [nibfin #233](https://github.com/taco3064/nibfin/issues/233), with the reviewed
 [registration/runtime correction](https://github.com/taco3064/nibfin/pull/246), source
-`9504d15d65476725b01b32df1bd7f93b8de85627`. Core owns authorization, routing,
+`bd59c2e01b14a66cd870f0af0268928e231f7e85`. Core owns authorization, routing,
 policy, custody, lifecycle, recovery, independent reviews, scheduling and merge.
 The Action supplies no grant, repair capability, retry loop, timer service or second controller.
 
 This is a **source/package candidate**, not a published Action or integrated Core
 release. Proposed Action version: **0.1.0**. `core-release.json` binds the reviewed
-Core archive (`13d65ffd998559ad19d3542df583cc28224a6f4fee76ea739e5722df7fbf302b`),
+Core archive (`1be600fb1f11d6cf4273662a81ff61c463f5539ab3e3a462ac5d78c6a441553c`),
 manifest, compatibility, all installed package files and component/API identities.
 The old Core pin `ae64437d072d16ebad1ed119f6f7ab9c6b459e44` is incompatible with
 this adapter. Its historical public release does not prove the new integrated
@@ -197,3 +197,5 @@ set only at a safe boundary. Changed pins require fresh gates and applicable
 reauthorization. They cannot take over unfinished sessions or reuse old Acceptance/CI.
 Independent Acceptance, applicable isolated hooks, exact-head CI, final review and
 protected merge remain Core-managed obligations after this source handoff.
+
+The reviewed [shared execution pool producer](https://github.com/taco3064/nibfin/pull/248) separates the protected logical target from the actual dispatch repository. The Action delegates that projection to the same verified Core after approving deployment options. CLI onboarding and actual Runner cutover remain separately verified installation work.

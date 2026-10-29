@@ -33,7 +33,7 @@ export async function invoke(env=process.env){
   need(JSON.stringify(core.distributionAPI)===JSON.stringify(pin.distribution.api),'api');
   const identity=core.distributionIdentity();
   for(const name of ['core','workflow','skills'])need(identity.components[name].sha256===pin.components[name],'components');
-  const context={repository:env.GITHUB_REPOSITORY?.toLowerCase(),repositoryId:env.GITHUB_REPOSITORY_ID,
+  let context={repository:env.GITHUB_REPOSITORY?.toLowerCase(),repositoryId:env.GITHUB_REPOSITORY_ID,
     run:{id:env.GITHUB_RUN_ID,attempt:env.GITHUB_RUN_ATTEMPT},eventName:env.GITHUB_EVENT_NAME,
     event:JSON.parse(readFileSync(env.GITHUB_EVENT_PATH,'utf8'))};
   const {projectIssue}=await from('src/workflow.mjs');
@@ -41,6 +41,7 @@ export async function invoke(env=process.env){
   if(memberMode(mode))input.resolution=env.NIBFIN_RESOLUTION;
   const deployment=await loadProtectedDeployment({source:env.NIBFIN_HOST_CAPABILITY_SOURCE,options:env.NIBFIN_HOST_OPTIONS,
     approval:approvals.deployment,validate:configuredHost.validateHostOptions,mode});
+  context=core.projectExecutionContext({options:deployment.options,mode,context});
   const controller=new AbortController(),cancel=()=>controller.abort();process.once('SIGTERM',cancel);process.once('SIGINT',cancel);
   let result;
   try{result=await core.createWorkflowEntry(configuredHost.configure({core,mode,context,deployment})).invoke(mode,input,context,{signal:controller.signal});}
