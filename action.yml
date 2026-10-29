@@ -11,7 +11,7 @@ inputs:
     description: Approved full SHA of prepared public host checkout
     required: true
   mode:
-    description: lookup, resolve, execute, compute, wake or registration
+    description: lookup, resolve, execute, compute, wake, registration or rescue
     required: true
   input:
     description: Bounded JSON object using released per-mode keys
@@ -56,6 +56,12 @@ outputs:
   response:
     description: Core response; status is not Issue delivery proof
     value: ${{ steps.entry.outputs.response }}
+  outcome:
+    description: Producer recovery outcome; only verified RESOLVED is successful
+    value: ${{ steps.entry.outputs.outcome }}
+  conclusion:
+    description: Producer recovery conclusion; only verified RESOLVED is successful
+    value: ${{ steps.entry.outputs.conclusion }}
 runs:
   using: composite
   steps:
@@ -72,25 +78,6 @@ runs:
         NIBFIN_RESOLUTION: ${{ inputs.resolution }}
         NIBFIN_ACTION_ROOT: ${{ github.action_path }}
       run: node "$NIBFIN_ACTION_ROOT/src/entry.mjs" validate
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-      with:
-        repository: taco3064/nibfin
-        ref: ae64437d072d16ebad1ed119f6f7ab9c6b459e44
-        path: nibfin-core
-        persist-credentials: false
-    - name: Verify Core and install locked dependencies
-      shell: bash
-      env:
-        NIBFIN_BUNDLE_COMMIT: ${{ inputs.bundle_commit }}
-        NIBFIN_HOST_COMMIT: ${{ inputs.host_commit }}
-        NIBFIN_MODE: ${{ inputs.mode }}
-        NIBFIN_INPUT: ${{ inputs.input }}
-        NIBFIN_RESOLUTION: ${{ inputs.resolution }}
-        NIBFIN_ACTION_ROOT: ${{ github.action_path }}
-      run: |
-        node "$NIBFIN_ACTION_ROOT/src/entry.mjs" content
-        npm ci --prefix "$GITHUB_WORKSPACE/nibfin-core" --omit=dev --ignore-scripts --no-audit --no-fund
-        npm ci --prefix "$GITHUB_WORKSPACE/nibfin-host" --ignore-scripts --no-audit --no-fund
     - id: entry
       shell: bash
       env:
@@ -99,7 +86,7 @@ runs:
         NIBFIN_MODE: ${{ inputs.mode }}
         NIBFIN_INPUT: ${{ inputs.input }}
         NIBFIN_RESOLUTION: ${{ inputs.resolution }}
-        NIBFIN_READ_TOKEN: ${{ inputs.mode != 'execute' && inputs.mode != 'compute' && inputs.read_token || '' }}
-        NIBFIN_HOST_TOKEN: ${{ inputs.mode != 'execute' && inputs.mode != 'compute' && inputs.host_token || '' }}
+        NIBFIN_READ_TOKEN: ${{ inputs.mode != 'execute' && inputs.mode != 'compute' && inputs.mode != 'rescue' && inputs.read_token || '' }}
+        NIBFIN_HOST_TOKEN: ${{ inputs.mode != 'execute' && inputs.mode != 'compute' && inputs.mode != 'rescue' && inputs.host_token || '' }}
         NIBFIN_ACTION_ROOT: ${{ github.action_path }}
       run: node "$NIBFIN_ACTION_ROOT/src/entry.mjs"

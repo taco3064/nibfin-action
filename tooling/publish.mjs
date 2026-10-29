@@ -1,12 +1,13 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
-import {hash,need,commit} from '../src/contract.mjs';
+import {hash,need,commit,pin} from '../src/contract.mjs';
 import {verifyPackage} from './package.mjs';
 export const repository='taco3064/nibfin-action',repositoryId='1428543343';
 export async function publish({manifest:m,assets,run,request,record}) {
   need(m?.format===1&&m.package==='@nibfin/action'&&/^\d+\.\d+\.\d+$/.test(m.version)
     &&m.source?.kind==='merged'&&commit(m.source.commit),'publication-source');
+  need(JSON.stringify(m.core)===JSON.stringify(pin),'publication-core-mapping');
   const sha=m.source.commit,tag='v'+m.version,base='/repos/'+repository;
   need(run?.repository===repository&&run.repositoryId===repositoryId&&run.ref==='refs/heads/main'
     &&['push','workflow_dispatch'].includes(run.event)&&run.sha===sha&&/^[1-9]\d*$/.test(run.id)&&/^[1-9]\d*$/.test(run.attempt),'publication-run');
@@ -29,6 +30,20 @@ export async function publish({manifest:m,assets,run,request,record}) {
     if(![200,201].includes(r.status)){record({...receipt,status:r.status>=500?'unknown':'failed',httpStatus:r.status,operation:{method,path}});throw Error('publication:reconcile-before-retry');}
     return r.data;
   };
+  // #15 may publish only after #203 actually releases THESE integrated bytes.
+  // An old public version or the source handoff alone is not release evidence.
+  const coreBase='/repos/'+pin.repository;
+  const coreRelease=await get(coreBase+'/releases/tags/v'+pin.version);
+  need(coreRelease?.immutable===true&&coreRelease.draft===false&&coreRelease.prerelease===false
+    &&coreRelease.tag_name==='v'+pin.version&&coreRelease.target_commitish===pin.commit,'publication-integrated-core');
+  const coreTag=await get(coreBase+'/git/ref/tags/v'+pin.version);
+  let coreObject=coreTag?.object;
+  for(let n=0;coreObject?.type==='tag'&&n<4;n++)coreObject=(await get(coreBase+'/git/tags/'+coreObject.sha)).object;
+  need(coreObject?.type==='commit'&&coreObject.sha===pin.commit,'publication-integrated-core');
+  const coreAssets=await get(coreBase+'/releases/'+coreRelease.id+'/assets?per_page=100');
+  need(Array.isArray(coreAssets)&&pin.assets.every(a=>coreAssets.filter(b=>b.name===a.name).length===1
+    &&coreAssets.some(b=>b.name===a.name&&b.state==='uploaded'&&b.size===a.bytes&&b.digest==='sha256:'+a.sha256)),'publication-integrated-core-assets');
+  receipt.core={source:pin.commit,releaseId:String(coreRelease.id),tag:coreRelease.tag_name,assets:pin.assets};record(receipt);
   const repo=await get(base),branch=await get(base+'/branches/main');
   need(String(repo.id)===repositoryId&&repo.full_name===repository&&repo.visibility==='public'&&branch.protected===true,'publication-repository');
   const prs=await get(base+'/commits/'+sha+'/pulls?per_page=100');
@@ -67,6 +82,7 @@ export function githubRequest(token){
   return async({method,path,data,bytes})=>{
     const url=path.startsWith('/')?'https://api.github.com'+path:path;
     need(url==='https://api.github.com/repos/'+repository||url.startsWith('https://api.github.com/repos/'+repository+'/')
+      ||method==='GET'&&(url==='https://api.github.com/repos/'+pin.repository||url.startsWith('https://api.github.com/repos/'+pin.repository+'/'))
       ||url.startsWith('https://uploads.github.com/repos/'+repository+'/releases/'),'publication-origin');
     const r=await fetch(url,{method,redirect:'error',signal:AbortSignal.timeout(30000),headers:{Authorization:'Bearer '+token,
       Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':bytes?'application/octet-stream':'application/json'},body:bytes??(data?JSON.stringify(data):undefined)});

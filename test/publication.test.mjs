@@ -4,16 +4,26 @@ import {readFileSync} from 'node:fs';
 import {parse} from 'yaml';
 import {publish,repository,repositoryId,githubRequest} from '../tooling/publish.mjs';
 import {verifyPackage} from '../tooling/package.mjs';
-import {hash} from '../src/contract.mjs';
+import {hash,pin} from '../src/contract.mjs';
 function fixture(){
   const m=structuredClone(verifyPackage()),sha='a'.repeat(40);m.source.kind='merged';m.source.commit=sha;
   const assets=new Map([['nibfin-action.tgz',readFileSync('out/nibfin-action.tgz')],['action-release-manifest.json',Buffer.from(JSON.stringify(m))]]);
   const run={repository,repositoryId,sha,ref:'refs/heads/main',event:'push',id:'7',attempt:'1'},records=[],calls=[];
-  const base='/repos/'+repository,state={release:null,assets:[],tag:null,enabled:true,protected:true,merged:true,fault:null};
+  const base='/repos/'+repository,state={core:'integrated',release:null,assets:[],tag:null,enabled:true,protected:true,merged:true,fault:null};
   async function request(q){
     calls.push(q);const p=q.path;let result;
     if(q.method==='GET'){
-      if(p===base)result={id:Number(repositoryId),full_name:repository,visibility:'public'};
+      if(p.startsWith('/repos/'+pin.repository+'/')){
+        if(p.includes('/releases/tags/'))result={id:233,immutable:true,draft:false,prerelease:false,tag_name:'v'+pin.version,target_commitish:state.core==='historical'?'ae64437d072d16ebad1ed119f6f7ab9c6b459e44':pin.commit};
+        else if(p.includes('/git/ref/'))result={object:{type:'commit',sha:pin.commit}};
+        else if(p.includes('/assets?'))result=pin.assets.map(a=>({name:a.name,size:a.bytes,digest:'sha256:'+a.sha256,state:'uploaded'}));
+        else throw Error('unexpected core GET');
+        if(state.core==='missing')return {status:404};
+        if(state.core==='denied')return {status:403};
+        if(state.core==='mutable'&&result.immutable)result.immutable=false;
+        if(state.core==='altered'&&Array.isArray(result))result[0].digest='sha256:'+'f'.repeat(64);
+      }
+      else if(p===base)result={id:Number(repositoryId),full_name:repository,visibility:'public'};
       else if(p.endsWith('/branches/main'))result={protected:state.protected};
       else if(p.includes('/commits/'))result=state.merged?[{merged_at:'now',merge_commit_sha:sha,base:{ref:'main',repo:{id:repositoryId}}}]:[];
       else if(p.endsWith('/immutable-releases'))result={enabled:state.enabled};
@@ -78,4 +88,19 @@ test('trusted release workflow cannot publish from a PR, skip the write, or weak
   assert.equal(p.env.NIBFIN_RELEASE_TOKEN,'${{ secrets.NIBFIN_RELEASE_TOKEN }}');
   assert.equal(j.steps[0].with.ref,'${{ github.sha }}');assert.equal(j.steps[0].with['persist-credentials'],false);
   const bind=j.steps.find(s=>s.run==='node tooling/package.mjs');assert.equal(bind.env.NIBFIN_RELEASE_COMMIT,'${{ github.sha }}');
+});
+
+test('#15 release rejects missing, historical, denied, mutable or altered integrated #203 Core before any Action write',async()=>{
+  for(const mode of ['missing','historical','denied','mutable','altered']){
+    const f=fixture();f.state.core=mode;await assert.rejects(publish(f.args()));assert(f.calls.every(c=>c.method==='GET'),mode);
+  }
+});
+
+test('publication transport permits only fixed producer GET reads and owning Action writes',async t=>{
+  const calls=[];t.mock.method(globalThis,'fetch',async(url,options)=>{calls.push({url,options});return {status:200,json:async()=>({})};});
+  const request=githubRequest('publication-token');
+  assert.equal((await request({method:'GET',path:'/repos/'+pin.repository+'/releases/tags/v'+pin.version})).status,200);
+  for(const [method,path] of [['POST','/repos/'+pin.repository+'/releases'],['GET','/repos/'+pin.repository+'-other/releases'],
+    ['POST','https://uploads.github.com/repos/'+pin.repository+'/releases/1/assets']])await assert.rejects(request({method,path}));
+  assert.equal(calls.length,1);
 });
