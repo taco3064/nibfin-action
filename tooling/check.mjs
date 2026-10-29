@@ -11,6 +11,7 @@ if(pkg){
  if(!existsSync('package-lock.json'))throw Error('A package requires a committed lockfile for reproducible CI');
  execFileSync('npm',['ci','--ignore-scripts','--no-audit','--no-fund','--bin-links=false'],{stdio:'inherit'});
 }
+if(!existsSync('.test-core'))execFileSync(process.execPath,['tooling/test-input.mjs'],{stdio:'inherit'});
 if(existsSync('tooling/package.mjs'))execFileSync(process.execPath,['tooling/package.mjs'],{stdio:'inherit',env:{...process.env,NIBFIN_RELEASE_BASE:process.env.GITHUB_SHA}});
 if(pkg?.scripts?.test){
  execFileSync('npm',['test'],{stdio:'inherit'});

@@ -4,9 +4,9 @@ import {pathToFileURL} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {gunzipSync} from 'node:zlib';
 import {hash,pin,need,commit,regular} from '../src/contract.mjs';
-export const runtimeFiles=['README.md','action.yml','core-release.json','src/contract.mjs','src/entry.mjs'];
-export const sourceFiles=[...runtimeFiles,'package.json','package-lock.json','.gitignore','tooling/package.mjs','tooling/publish.mjs','tooling/check.mjs','tooling/test-input.mjs',
-  'test/action.test.mjs','test/publication.test.mjs','.github/workflows/action-release.yml','.github/workflows/action-ci.yml'].sort();
+export const runtimeFiles=['README.md','action.yml','core-release.json','src/contract.mjs','src/entry.mjs','src/invoke.mjs'];
+export const sourceFiles=[...runtimeFiles,'package.json','package-lock.json','.gitignore','tooling/package.mjs','tooling/publish.mjs','tooling/check.mjs','tooling/test-input.mjs','tooling/core-source.json',
+  'test/action.test.mjs','test/rescue-fixture.mjs','test/grouped-fixture.mjs','test/publication.test.mjs','.github/workflows/action-release.yml','.github/workflows/action-ci.yml'].sort();
 export function inspectArchive(bytes,expected) {
   need(bytes.length<1048576,'archive');const tar=gunzipSync(bytes,{maxOutputLength:2097152}),found=new Map();let offset=0;
   for(;offset+512<=tar.length;){

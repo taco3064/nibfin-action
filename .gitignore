@@ -1,3 +1,5 @@
 node_modules/
 out/
 .test-core/
+.test-producer/
+.test-fixtures/

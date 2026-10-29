@@ -29,6 +29,7 @@ jobs:
           NIBFIN_RELEASE_BASE: ${{ github.sha }}
           NIBFIN_RELEASE_COMMIT: ${{ github.sha }}
         run: node tooling/package.mjs
+      # Publication preflight requires the exact integrated Core release from nibfin #203.
       - name: Publish and reconcile immutable release
         env:
           NIBFIN_RELEASE_TOKEN: ${{ secrets.NIBFIN_RELEASE_TOKEN }}
