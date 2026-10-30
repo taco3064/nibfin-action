@@ -348,7 +348,9 @@ test('Action CI prepares the exact integrated archive without dependency lifecyc
   for(const s of steps){if(s.uses)assert.match(s.uses,/@[a-f0-9]{40}$/);if(s.uses?.startsWith('actions/checkout'))assert.equal(s.with['persist-credentials'],false);}
   const source=steps.find(s=>s.with?.repository===pin.repository);assert.equal(source.with.ref,pin.commit);assert.equal(source.with.path,'.test-producer');
   const prepare=steps.find(s=>s.name==='Prepare reviewed producer archive');assert(prepare.run.includes('--ignore-scripts'));assert(prepare.run.includes('node tooling/test-input.mjs --build .test-producer'));
-  assert.equal(steps.at(-1).run,'node tooling/check.mjs');
+  const check=steps.findIndex(s=>s.run==='node tooling/check.mjs'),lint=steps.findIndex(s=>s.run==='node tooling/lint-workflows.mjs');
+  assert(check>=0&&lint>check,'The committed YAML dependency is installed before the compatibility lint adapter runs');
+  assert.equal(steps.at(-1).run,'node tooling/lint-workflows.mjs');
 });
 
 test('waiting selection and ignored wake remain distinct non-delivery results',()=>{
