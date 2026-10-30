@@ -1,4 +1,4 @@
-import {readFileSync,writeFileSync} from 'node:fs';
+import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {hash,need,commit,pin} from '../src/contract.mjs';
@@ -95,7 +95,12 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
     await publish({manifest:m,assets:new Map(['nibfin-action.tgz','action-release-manifest.json'].map(n=>[n,readFileSync('out/'+n)])),
       run:{repository:e.GITHUB_REPOSITORY,repositoryId:e.GITHUB_REPOSITORY_ID,ref:e.GITHUB_REF,event:e.GITHUB_EVENT_NAME,sha:e.GITHUB_SHA,id:e.GITHUB_RUN_ID,attempt:e.GITHUB_RUN_ATTEMPT},
       request:githubRequest(e.NIBFIN_RELEASE_TOKEN),immutabilityPolicy:e.NIBFIN_RELEASE_IMMUTABILITY_POLICY||'api-preflight',record:r=>writeFileSync('out/publication-result.json',JSON.stringify(r,null,2)+'\n')});
-  }catch(error) {const code=/^nibfin-action: publication-[a-z-]+$/.test(error?.message??'')?error.message:'nibfin-action: publication-unavailable';
-    if(!['publication-result.json'].some(name=>{try{readFileSync('out/'+name);return true;}catch{return false;}}))writeFileSync('out/publication-result.json',JSON.stringify({status:'blocked',code})+'\n');
-    console.error(code+'; inspect retained receipt and reconcile before retry');process.exitCode=1;}
+  }catch(error) {
+    const code=/^(?:action:publication-|publication:)[a-z-]+$/.test(error?.message??'')?error.message:'action:publication-unavailable';
+    mkdirSync('out',{recursive:true});
+    const path='out/publication-result.json';
+    const prior=existsSync(path)?JSON.parse(readFileSync(path)):{};
+    writeFileSync(path,JSON.stringify({...prior,status:prior.status??'blocked',code})+'\n');
+    console.error(code+'; inspect retained receipt and reconcile before retry');process.exitCode=1;
+  }
 }
