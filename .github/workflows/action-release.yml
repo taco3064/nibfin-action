@@ -32,7 +32,8 @@ jobs:
       # Publication preflight requires the exact integrated Core release from nibfin #203.
       - name: Publish and reconcile immutable release
         env:
-          NIBFIN_RELEASE_TOKEN: ${{ secrets.NIBFIN_RELEASE_TOKEN }}
+          NIBFIN_RELEASE_TOKEN: ${{ github.token }}
+          NIBFIN_RELEASE_IMMUTABILITY_POLICY: repository-enforced
         run: node tooling/publish.mjs
       - name: Retain publication observations
         if: always()

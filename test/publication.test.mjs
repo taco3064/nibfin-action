@@ -85,7 +85,8 @@ test('trusted release workflow cannot publish from a PR, skip the write, or weak
   assert(j.if.includes("github.ref == 'refs/heads/main'"));
   for(const s of j.steps){if(s.uses)assert.match(s.uses,/@[a-f0-9]{40}$/);if(s.run)assert(!s.run.includes('${{'));}
   const p=j.steps.find(s=>s.run==='node tooling/publish.mjs');assert(p);assert.equal(p.if,undefined);
-  assert.equal(p.env.NIBFIN_RELEASE_TOKEN,'${{ secrets.NIBFIN_RELEASE_TOKEN }}');
+  assert.equal(p.env.NIBFIN_RELEASE_TOKEN,'${{ github.token }}');
+  assert.equal(p.env.NIBFIN_RELEASE_IMMUTABILITY_POLICY,'repository-enforced');
   assert.equal(j.steps[0].with.ref,'${{ github.sha }}');assert.equal(j.steps[0].with['persist-credentials'],false);
   const bind=j.steps.find(s=>s.run==='node tooling/package.mjs');assert.equal(bind.env.NIBFIN_RELEASE_COMMIT,'${{ github.sha }}');
 });
@@ -103,4 +104,13 @@ test('publication transport permits only fixed producer GET reads and owning Act
   for(const [method,path] of [['POST','/repos/'+pin.repository+'/releases'],['GET','/repos/'+pin.repository+'-other/releases'],
     ['POST','https://uploads.github.com/repos/'+pin.repository+'/releases/1/assets']])await assert.rejects(request({method,path}));
   assert.equal(calls.length,1);
+});
+
+test('repository-enforced publication uses the job token without an administration permission but verifies immutable readback',async()=>{
+ const f=fixture(),request=f.args().request;
+ const args={...f.args(),immutabilityPolicy:'repository-enforced',request:q=>{assert(!q.path.endsWith('/immutable-releases'));return request(q);}};
+ assert.equal((await publish(args)).status,'published');
+ const g=fixture();await publish(g.args());g.state.release.immutable=false;
+ await assert.rejects(publish({...g.args(),immutabilityPolicy:'repository-enforced'}));
+ await assert.rejects(publish({...fixture().args(),immutabilityPolicy:'unchecked'}));
 });
