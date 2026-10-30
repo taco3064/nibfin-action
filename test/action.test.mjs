@@ -343,6 +343,8 @@ test('installed readiness constructor is inert and check distinguishes source/me
 test('Action CI prepares the exact integrated archive without dependency lifecycle scripts',()=>{
   const w=parse(readFileSync('.github/workflows/ci.yml','utf8')),steps=w.jobs.action.steps;
   assert.deepEqual(w.permissions,{contents:'read'});
+  assert.equal(w.jobs.action.needs,'owner-pr');
+  assert(w.jobs['owner-pr'].steps[0].run.includes('PR_AUTHOR_ID !== process.env.OWNER_ID'));
   for(const s of steps){if(s.uses)assert.match(s.uses,/@[a-f0-9]{40}$/);if(s.uses?.startsWith('actions/checkout'))assert.equal(s.with['persist-credentials'],false);}
   const source=steps.find(s=>s.with?.repository===pin.repository);assert.equal(source.with.ref,pin.commit);assert.equal(source.with.path,'.test-producer');
   const prepare=steps.find(s=>s.name==='Prepare reviewed producer archive');assert(prepare.run.includes('--ignore-scripts'));assert(prepare.run.includes('node tooling/test-input.mjs --build .test-producer'));
