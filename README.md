@@ -3,13 +3,13 @@
 Thin Action adapter for the reviewed, integrated public Nibfin distribution from
 [nibfin #233](https://github.com/taco3064/nibfin/issues/233), with the reviewed
 [native Scope/Shape and maintenance candidate](https://github.com/taco3064/nibfin/pull/253), source
-`276d9c900a4659cc307a7d200fc997fef890a586`. Core owns authorization, routing,
+`306f63e809912d9e77fd5da320774fba34f77d54`. Core owns authorization, routing,
 policy, custody, lifecycle, recovery, independent reviews, scheduling and merge.
 The Action supplies no grant, repair capability, retry loop, timer service or second controller.
 
 This is a **source/package candidate**, not a published Action or integrated Core
 release. Proposed Action version: **0.1.0**. `core-release.json` binds the reviewed
-Core archive (`d789723b8833b303b26bdff77fc40d7ad456e6bced8c367bd92b916a6d539b55`),
+Core archive (`7e16ede775fdf9494803979eaa620b3f58a5a2249072f3ed34f80af233d7f6fe`),
 manifest, compatibility, all installed package files and component/API identities.
 The old Core pin `ae64437d072d16ebad1ed119f6f7ab9c6b459e44` is incompatible with
 this adapter. Its historical public release does not prove the new integrated
@@ -91,7 +91,7 @@ one maintained public owner each:
 
 `src/rescue-policy.mjs` owns recovery Run authentication and `src/rescue-completion.mjs` owns its workflow_run receiver; `src/host-source.mjs` owns deployment source approval. These are distinct producer responsibilities, not wrapper alternatives.
 
-`src/distribution-map.json` records origin/adaptation provenance. Historical Kairo
+`src/distribution-map.json` records origin/adaptation provenance. Historical upstream
 and maintainer self-hosted transport are provenance, not public runtime prerequisites.
 
 ## Inputs and safe outputs
