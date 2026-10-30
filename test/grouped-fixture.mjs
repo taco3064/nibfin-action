@@ -38,7 +38,7 @@ export async function prepareGrouped(f,reused=false){
   const history=structuredClone(f.pin.receipts);
   const old=history.shape.execution.source.runId;
   f.pin.invocation={request:'accept-request',run:{id:reused?old:'999',attempt:'1'}};
-  f.identity.run={...f.pin.invocation.run};f.input.nibfin_request='accept-request';
+  f.identity.run={...f.pin.invocation.run};f.input.nibfin_request='accept-request';f.input.nibfin_stage='accept';
   Object.assign(f.queuedRequest,await f.queued());
   return {a,history,old};
 }
