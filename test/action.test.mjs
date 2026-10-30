@@ -341,7 +341,7 @@ test('installed readiness constructor is inert and check distinguishes source/me
 });
 
 test('Action CI prepares the exact integrated archive without dependency lifecycle scripts',()=>{
-  const w=parse(readFileSync('.github/workflows/action-ci.yml','utf8')),steps=w.jobs.action.steps;
+  const w=parse(readFileSync('.github/workflows/ci.yml','utf8')),steps=w.jobs.action.steps;
   assert.deepEqual(w.permissions,{contents:'read'});
   for(const s of steps){if(s.uses)assert.match(s.uses,/@[a-f0-9]{40}$/);if(s.uses?.startsWith('actions/checkout'))assert.equal(s.with['persist-credentials'],false);}
   const source=steps.find(s=>s.with?.repository===pin.repository);assert.equal(source.with.ref,pin.commit);assert.equal(source.with.path,'.test-producer');
