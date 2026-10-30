@@ -20,7 +20,7 @@ export function regular(root,path) {
 }
 export function verifyCore(root) {
   need(pin.format===2 && pin.package==='@nibfin/core' && pin.version==='0.1.0'
-    && pin.commit==='d5372d6334dad8ef8906fb320e8bab11114a02cc'&&pin.status==='reviewed-source','mapping');
+    && pin.commit==='276d9c900a4659cc307a7d200fc997fef890a586'&&pin.status==='reviewed-source','mapping');
   need(pin.distribution.api.installation===1&&pin.distribution.api.runtime===2&&pin.distribution.api.recovery===1,'mapping');
   for(const f of pin.files)need(hash(regular(root,f.path))===f.sha256,'content');
   const p=JSON.parse(regular(root,'package.json'));need(p.name===pin.package&&p.version===pin.version,'content');
