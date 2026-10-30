@@ -4,7 +4,8 @@ import {pathToFileURL} from 'node:url';
 import {hash,need,commit,pin} from '../src/contract.mjs';
 import {verifyPackage} from './package.mjs';
 export const repository='taco3064/nibfin-action',repositoryId='1428543343';
-export async function publish({manifest:m,assets,run,request,record}) {
+export async function publish({manifest:m,assets,run,request,record,immutabilityPolicy='api-preflight'}) {
+  need(['api-preflight','repository-enforced'].includes(immutabilityPolicy),'publication-immutability-policy');
   need(m?.format===1&&m.package==='@nibfin/action'&&/^\d+\.\d+\.\d+$/.test(m.version)
     &&m.source?.kind==='merged'&&commit(m.source.commit),'publication-source');
   need(JSON.stringify(m.core)===JSON.stringify(pin),'publication-core-mapping');
@@ -48,7 +49,7 @@ export async function publish({manifest:m,assets,run,request,record}) {
   need(String(repo.id)===repositoryId&&repo.full_name===repository&&repo.visibility==='public'&&branch.protected===true,'publication-repository');
   const prs=await get(base+'/commits/'+sha+'/pulls?per_page=100');
   need(Array.isArray(prs)&&prs.some(p=>p.merged_at&&p.merge_commit_sha===sha&&p.base?.ref==='main'&&String(p.base.repo?.id)===repositoryId),'publication-merge');
-  need((await get(base+'/immutable-releases')).enabled===true,'publication-immutability');
+  if(immutabilityPolicy==='api-preflight')need((await get(base+'/immutable-releases')).enabled===true,'publication-immutability');
   const target=async()=>{let o=(await get(base+'/git/ref/tags/'+tag,true))?.object;
     for(let n=0;o&&n<4;n++){need(commit(o.sha),'publication-tag');if(o.type==='commit')return o.sha;need(o.type==='tag','publication-tag');o=(await get(base+'/git/tags/'+o.sha)).object;}need(!o,'publication-tag');return null;};
   const priorTag=await target();need(!priorTag||priorTag===sha,'publication-conflict');
@@ -69,7 +70,7 @@ export async function publish({manifest:m,assets,run,request,record}) {
       await write('POST',`https://uploads.github.com${base}/releases/${id}/assets?name=${e.name}`,null,assets.get(e.name));
       existing=await assetList();check(existing,false);need(existing.some(a=>a.name===e.name),'publication-upload');
     }
-    check(existing,true);need((await get(base+'/immutable-releases')).enabled===true,'publication-immutability');
+    check(existing,true);if(immutabilityPolicy==='api-preflight')need((await get(base+'/immutable-releases')).enabled===true,'publication-immutability');
     await write('PATCH',base+'/releases/'+id,{draft:false});
   }
   release=await get(base+'/releases/tags/'+tag);identity(release);
@@ -93,6 +94,8 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
   try {const m=verifyPackage(),e=process.env;
     await publish({manifest:m,assets:new Map(['nibfin-action.tgz','action-release-manifest.json'].map(n=>[n,readFileSync('out/'+n)])),
       run:{repository:e.GITHUB_REPOSITORY,repositoryId:e.GITHUB_REPOSITORY_ID,ref:e.GITHUB_REF,event:e.GITHUB_EVENT_NAME,sha:e.GITHUB_SHA,id:e.GITHUB_RUN_ID,attempt:e.GITHUB_RUN_ATTEMPT},
-      request:githubRequest(e.NIBFIN_RELEASE_TOKEN),record:r=>writeFileSync('out/publication-result.json',JSON.stringify(r,null,2)+'\n')});
-  }catch {console.error('nibfin-action: publication blocked; inspect retained receipt and reconcile before retry');process.exitCode=1;}
+      request:githubRequest(e.NIBFIN_RELEASE_TOKEN),immutabilityPolicy:e.NIBFIN_RELEASE_IMMUTABILITY_POLICY||'api-preflight',record:r=>writeFileSync('out/publication-result.json',JSON.stringify(r,null,2)+'\n')});
+  }catch(error) {const code=/^nibfin-action: publication-[a-z-]+$/.test(error?.message??'')?error.message:'nibfin-action: publication-unavailable';
+    if(!['publication-result.json'].some(name=>{try{readFileSync('out/'+name);return true;}catch{return false;}}))writeFileSync('out/publication-result.json',JSON.stringify({status:'blocked',code})+'\n');
+    console.error(code+'; inspect retained receipt and reconcile before retry');process.exitCode=1;}
 }

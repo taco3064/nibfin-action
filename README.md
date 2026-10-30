@@ -184,7 +184,7 @@ No live release is performed or required for this source Issue.
 CD retains protected main, merged-PR/source readback, immutable-release preflight,
 draft asset assembly, exact asset readback, conflict rejection and unknown-write
 reconciliation. Protect `nibfin-release` and supply its publication-only
-NIBFIN_RELEASE_TOKEN with Contents:write and Administration:read. Missing/denied
+the built-in GitHub job token with Contents:write and repository-enforced immutable releases. Missing/denied
 capabilities block publication. On an unknown write, retain publication-result.json
 and independently reconcile provider state before an authorized rerun. Matching
 published state is reused; conflicting releases/tags/assets are never overwritten.
