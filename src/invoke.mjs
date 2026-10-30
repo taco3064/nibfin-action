@@ -1,5 +1,5 @@
 // Installed-package adaptation of the producer workflow entry. No lifecycle policy here.
-import {readFileSync,appendFileSync} from 'node:fs';
+import {readFileSync,appendFileSync,writeSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {pin,hash,need,verifyCore,validate,memberMode} from './contract.mjs';
@@ -30,6 +30,8 @@ export async function invoke(env=process.env){
   const readiness=await installation.check();need(readiness.status==='ready'
     &&readiness.scope===(memberMode(mode)?'member-runtime':'source-contract'),'readiness');
   const core=await from('src/index.mjs');
+  const {actionLogLine}=await from('src/action-display.mjs');
+  const progress=record=>{if(env.NIBFIN_PROGRESS_CHANNEL==='1')writeSync(3,actionLogLine(record,mode));};
   need(JSON.stringify(core.distributionAPI)===JSON.stringify(pin.distribution.api),'api');
   const identity=core.distributionIdentity();
   for(const name of ['core','workflow','skills'])need(identity.components[name].sha256===pin.components[name],'components');
@@ -44,8 +46,9 @@ export async function invoke(env=process.env){
   context=core.projectExecutionContext({options:deployment.options,mode,context});
   const controller=new AbortController(),cancel=()=>controller.abort();process.once('SIGTERM',cancel);process.once('SIGINT',cancel);
   let result;
-  try{result=await core.createWorkflowEntry(configuredHost.configure({core,mode,context,deployment})).invoke(mode,input,context,{signal:controller.signal});}
+  try{result=await core.createWorkflowEntry(configuredHost.configure({core,mode,context,deployment}),{onProgress:progress}).invoke(mode,input,context,{signal:controller.signal});}
   finally{process.removeListener('SIGTERM',cancel);process.removeListener('SIGINT',cancel);}
+  progress(result);
   for(const [key,value] of Object.entries(result)){
     need(typeof value==='string'&&!/[\r\n]/.test(value),'output');appendFileSync(env.GITHUB_OUTPUT,`${key}=${value}\n`);
   }

@@ -3,11 +3,12 @@ import {createHash} from 'node:crypto';
 import {join,resolve,dirname} from 'node:path';
 export const hash=b=>createHash('sha256').update(b).digest('hex');
 export const pin=JSON.parse(readFileSync(new URL('../core-release.json',import.meta.url)));
-export const outputs='request reason execution_mode status selected runs_on resolution reference issue response outcome conclusion'.split(' ');
+export const outputs='request reason execution_mode status selected runs_on resolution reference issue response outcome conclusion stage ai_status blockage root_cause repair_status verified'.split(' ');
 export const need=(ok,category)=>{if(!ok)throw Error('action:'+category);};
 export const commit=v=>typeof v==='string' && /^[a-f0-9]{40}$/.test(v);
 const opaque=v=>typeof v==='string' && /^[A-Za-z0-9_-]{1,80}$/.test(v);
 const id=v=>typeof v==='string'&&/^[1-9][0-9]{0,19}$/.test(v);
+const stage=v=>['resolve','shape','shape-validator','publication','deliver','pre-accept-hooks','accept','pre-commit-hooks','pr','ci','shaper-review','merge','final','closure','delivered','fanout','recovery','repair'].includes(v);
 export const memberMode=mode=>['execute','compute'].includes(mode);
 export const sensitiveMode=mode=>memberMode(mode)||mode==='rescue';
 export function regular(root,path) {
@@ -19,7 +20,7 @@ export function regular(root,path) {
 }
 export function verifyCore(root) {
   need(pin.format===2 && pin.package==='@nibfin/core' && pin.version==='0.1.0'
-    && pin.commit==='304380f35513c8a26dd85cd29e6ce78caab3a44a'&&pin.status==='reviewed-source','mapping');
+    && pin.commit==='bf64807a364cfeb5f8f19219d2f8d61739106d01'&&pin.status==='reviewed-source','mapping');
   need(pin.distribution.api.installation===1&&pin.distribution.api.runtime===2&&pin.distribution.api.recovery===1,'mapping');
   for(const f of pin.files)need(hash(regular(root,f.path))===f.sha256,'content');
   const p=JSON.parse(regular(root,'package.json'));need(p.name===pin.package&&p.version===pin.version,'content');
@@ -31,9 +32,15 @@ export function validate(env) {
   const mode=env.NIBFIN_MODE;need(['lookup','resolve','execute','compute','wake','registration','rescue'].includes(mode),'mode');
   need(typeof env.NIBFIN_INPUT==='string' && Buffer.byteLength(env.NIBFIN_INPUT)<=16384,'input');
   const input=JSON.parse(env.NIBFIN_INPUT);need(input && typeof input==='object' && !Array.isArray(input),'input');
-  const keys=mode==='rescue'?'request_id source_run_id source_attempt mode nibfin_correlation nibfin_issue'
+  let keys=mode==='rescue'?'request_id source_run_id source_attempt mode nibfin_correlation nibfin_issue'
     :mode==='registration'?'nibfin_registration public_key level':mode==='lookup'?'nibfin_request nibfin_correlation'
     :mode==='wake'?'event':'nibfin_request nibfin_correlation issue';
+  if(mode==='rescue'){
+    if(Object.hasOwn(input,'nibfin_stage')){need(stage(input.nibfin_stage),'input');keys+=' nibfin_stage';}
+  }else if(!['registration','wake'].includes(mode)&&(Object.hasOwn(input,'nibfin_stage')||Object.hasOwn(input,'nibfin_issue'))){
+    need(stage(input.nibfin_stage)&&id(input.nibfin_issue)&&(mode==='lookup'||input.issue===input.nibfin_issue),'input');
+    keys+=' nibfin_issue nibfin_stage';
+  }
   need(Object.keys(input).sort().join(' ')===keys.split(' ').sort().join(' '),'input');
   if(mode==='rescue')need(/^[a-f0-9]{64}$/.test(input.request_id)&&['repair','diagnose','verify'].includes(input.mode)
     &&id(input.source_run_id)&&id(input.source_attempt)&&id(input.nibfin_issue)&&opaque(input.nibfin_correlation),'input');
@@ -60,6 +67,9 @@ export function project(text,mode) {
     if(key==='selected')need(['true','false'].includes(value),'output');
     if(key==='execution_mode')need(['execute','compute'].includes(value),'output');
     if(key==='issue')need(id(value),'output');
+    if(key==='stage')need(stage(value),'output');
+    if(['ai_status','blockage','root_cause','repair_status'].includes(key))need(value.length<=1200&&!value.includes('::')&&!value.includes('##['),'output');
+    if(key==='verified')need(['true','false'].includes(value),'output');
     if(key==='status')need(statuses.includes(value),'output');
     if(key==='outcome')need(['RESOLVED','UNRESOLVED','STAGE_RECOVERED','DEFERRED','PENDING_VERIFICATION','SUPERSEDED','NOT_NEEDED'].includes(value),'output');
     if(key==='conclusion')need(['success','failure','neutral'].includes(value),'output');

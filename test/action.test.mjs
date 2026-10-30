@@ -48,7 +48,7 @@ async function fixtureHost({core,mode,context}) {
     const v=await f.core.run(await f.queued()),validated=v.owner.output,vr=validated.validator.receipt;
     f.pin.receipts['shape-validator']=vr;f.pin.evidenceCurrent['shape-validator']={expected:structuredClone(vr),consumed:[]};f.pin.stageInput=validated;
     f.pin.invocation={request:'publish-request',run:{id:'102',attempt:'1'}};
-    Object.assign(f.queuedRequest,await f.queued());f.input.nibfin_request='publish-request';f.identity.run={id:'102',attempt:'1'};
+    Object.assign(f.queuedRequest,await f.queued());f.input.nibfin_request='publish-request';f.input.nibfin_stage='publication';f.identity.run={id:'102',attempt:'1'};
   }
   let grouped;
   if(fault==='grouped'||fault==='reused-history')grouped=await prepareGrouped(f,fault==='reused-history');
@@ -142,6 +142,20 @@ test('submitted package metadata, exact official release mapping and real-entry 
     }
   }finally{rmSync(c.dir,{recursive:true,force:true});}
 });
+test('Issue-stage metadata reaches real entry validation and pre-model progress without exposing raw child output',()=>{
+ const c=consumer();try{
+  const input={nibfin_request:'request-1',nibfin_correlation:'correlation-1',nibfin_issue:'101',nibfin_stage:'shape'};
+  assert.equal(invoke(c,'lookup',{input}).status,0);
+  const result=invoke(c,'compute',{input:{...input,issue:'101'}});
+  assert.equal(result.status,0,result.output+result.stderr);
+  assert.match(result.stdout,/"stage":"shape","status":"running"/);
+  for(const changed of [{nibfin_issue:'102'},{nibfin_stage:'accept'},{nibfin_stage:'shell'}]){
+   const denied=invoke(c,'compute',{input:{...input,issue:'101',...changed}});
+   assert.notEqual(denied.status,0);assert.equal(denied.audit?.records??0,0);
+  }
+ }finally{rmSync(c.dir,{recursive:true,force:true});}
+});
+
 test('early transport/content rejection, safe permission failures and opaque unknown result',()=>{
   const c=consumer();try{
     for(const change of [{NIBFIN_MODE:'shell'},{NIBFIN_BUNDLE_COMMIT:'main'},{NIBFIN_BUNDLE_COMMIT:'a'.repeat(40)},
@@ -201,10 +215,18 @@ test('packaged recovery uses production completion, provenance and bounded gray 
       ['stage-recovered','STAGE_RECOVERED',1],['deferred','DEFERRED',1],['pending','PENDING_VERIFICATION',1],
       ['superseded','SUPERSEDED',1],['not-needed','NOT_NEEDED',1]]){
       const r=await rescueCall(c,scenario);assert.equal(r.status,code,scenario+': '+r.output+r.stderr);
-      assert.equal(r.output,`status=${outcome==='RESOLVED'?'resolved':outcome==='UNRESOLVED'?'unresolved':'blocked'}\noutcome=${outcome}\nconclusion=${outcome==='RESOLVED'?'success':outcome==='UNRESOLVED'?'failure':'neutral'}\nreason=${outcome==='RESOLVED'||outcome==='UNRESOLVED'?'verified-report':'reporting-unsupported'}\n`,scenario);
+      const report=Object.fromEntries(r.output.trim().split('\n').map(line=>{const at=line.indexOf('=');return [line.slice(0,at),line.slice(at+1)];}));
+      assert.deepEqual(Object.fromEntries(['status','outcome','conclusion','reason'].map(k=>[k,report[k]])),{
+        status:outcome==='RESOLVED'?'resolved':outcome==='UNRESOLVED'?'unresolved':'blocked',outcome,
+        conclusion:outcome==='RESOLVED'?'success':outcome==='UNRESOLVED'?'failure':'neutral',
+        reason:outcome==='RESOLVED'||outcome==='UNRESOLVED'?'verified-report':'reporting-unsupported'},scenario);
+      assert.equal(report.issue,'101');assert.equal(report.stage,'deliver');assert.equal(report.verified,outcome==='RESOLVED'?'true':'false');
+      assert.match(r.stdout,/Nibfin execution /);
       assert.deepEqual(r.audit.tokens,[]);assert.equal(r.audit.target.cycle,'cycle-1');
       assert.equal(r.audit.state.cases[r.audit.id].source.runId,'100');assert.equal(r.audit.state.cases[r.audit.id].source.attempt,'1');
-      if(scenario==='pending'){assert.equal(r.audit.repairs,1);assert.deepEqual(r.audit.dispatches,[1]);assert.equal(r.audit.state.cases[r.audit.id].continuation.outcome,'confirmed-success');}
+      if(scenario==='pending'){assert.equal(r.audit.repairs,1);assert.equal(r.audit.diagnoses,1);
+        assert.equal(report.root_cause,'Invocation failure');assert.equal(report.repair_status,'pending-verification');
+        assert.deepEqual(r.audit.dispatches,[1]);assert.equal(r.audit.state.cases[r.audit.id].continuation.outcome,'confirmed-success');}
     }
     for(const scenario of ['stale-cycle','ambiguous-completion','cancelled','unknown-write','paused','hold','budget','forged-workflow-run',
       'provenance-actor','provenance-attempt','provenance-workflow','provenance-repository','provenance-version']){
@@ -227,7 +249,7 @@ test('packaged continuation preserves early completion, unchanged observations a
     assert.equal(unchanged.audit.observed.before,unchanged.audit.observed.after);
     const changed=await rescueCall(c,'ci-change');assert.notEqual(changed.status,0);assert(changed.output.includes('outcome=PENDING_VERIFICATION'));
     assert.equal(changed.audit.observed.proof.kind,'ci-change');assert.equal(changed.audit.observed.unchangedAccepted,false);assert.equal(changed.audit.observed.foreignAccepted,false);
-    assert.equal(changed.audit.repairs,1);assert.equal(changed.audit.diagnoses,0);assert.deepEqual(changed.audit.dispatches,[1]);
+    assert.equal(changed.audit.repairs,1);assert.equal(changed.audit.diagnoses,1);assert.deepEqual(changed.audit.dispatches,[1]);
     const next=changed.audit.retained.find(r=>r.status==='UNACCEPTED');assert.equal(next.session,changed.audit.target.session);
     assert(next.requiredGates.includes('accept'));assert.notEqual(changed.audit.state.cases[changed.audit.id].continuation.observation.id,'100');
   }finally{rmSync(c.dir,{recursive:true,force:true});}
