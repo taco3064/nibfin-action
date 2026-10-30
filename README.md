@@ -3,13 +3,13 @@
 Thin Action adapter for the reviewed, integrated public Nibfin distribution from
 [nibfin #233](https://github.com/taco3064/nibfin/issues/233), with the reviewed
 [native Scope/Shape and maintenance candidate](https://github.com/taco3064/nibfin/pull/253), source
-`bf64807a364cfeb5f8f19219d2f8d61739106d01`. Core owns authorization, routing,
+`d5372d6334dad8ef8906fb320e8bab11114a02cc`. Core owns authorization, routing,
 policy, custody, lifecycle, recovery, independent reviews, scheduling and merge.
 The Action supplies no grant, repair capability, retry loop, timer service or second controller.
 
 This is a **source/package candidate**, not a published Action or integrated Core
 release. Proposed Action version: **0.1.0**. `core-release.json` binds the reviewed
-Core archive (`54719b642430259c1cead603749161b9ec282cdf7f8d19ca3ca25cecfd99f859`),
+Core archive (`32912f9ff6635a479dc945f5f4f70211bdb7be54057480d0bc8b8258c8f51467`),
 manifest, compatibility, all installed package files and component/API identities.
 The old Core pin `ae64437d072d16ebad1ed119f6f7ab9c6b459e44` is incompatible with
 this adapter. Its historical public release does not prove the new integrated

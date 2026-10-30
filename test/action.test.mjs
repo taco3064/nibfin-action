@@ -288,7 +288,10 @@ test('packaged timeout and uncertain exits cannot publish success or leak creden
       const r=invoke(c,'lookup',{fault});assert.equal(r.status,1,fault+': '+r.output);assert.equal(r.output,'status=blocked\nreason=invalid-or-unavailable\n');
     }
     const loud=invoke(c,'lookup',{fault:'stdout'});assert.equal(loud.status,0);assert.equal(loud.output,'status=resolved\nissue=101\n');
-    const timed=invoke(c,'lookup',{fault:'hang',timeoutMs:1500});assert.equal(timed.status,1);assert.equal(timed.output,'status=blocked\nreason=invalid-or-unavailable\n');
+    // Include immutable package verification before the deliberately hung owner.
+    // The deadline still bounds the real child; keep enough startup budget for
+    // the non-root single-CPU package fixture to reach its retained PID marker.
+    const timed=invoke(c,'lookup',{fault:'hang',timeoutMs:5000});assert.equal(timed.status,1);assert.equal(timed.output,'status=blocked\nreason=invalid-or-unavailable\n');
     const pid=Number(readFileSync(join(c.dir,'audit.pid'),'utf8'));assert.throws(()=>process.kill(pid,0),{code:'ESRCH'});
   }finally{rmSync(c.dir,{recursive:true,force:true});}
 });
