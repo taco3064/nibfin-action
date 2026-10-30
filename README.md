@@ -3,13 +3,13 @@
 Thin Action adapter for the reviewed, integrated public Nibfin distribution from
 [nibfin #233](https://github.com/taco3064/nibfin/issues/233), with the reviewed
 [native Scope/Shape and maintenance candidate](https://github.com/taco3064/nibfin/pull/253), source
-`df4d36ba3292cd869d70bb9d3d903bfc82e1eadf`. Core owns authorization, routing,
+`304380f35513c8a26dd85cd29e6ce78caab3a44a`. Core owns authorization, routing,
 policy, custody, lifecycle, recovery, independent reviews, scheduling and merge.
 The Action supplies no grant, repair capability, retry loop, timer service or second controller.
 
 This is a **source/package candidate**, not a published Action or integrated Core
 release. Proposed Action version: **0.1.0**. `core-release.json` binds the reviewed
-Core archive (`af74dcc3f98137e4f953436f9eac307970dac0d1caf40659603bae241cfca740`),
+Core archive (`174b7014a87faac09d1d4ed5c33621ed028e562fe840c7671404f0e3cff731a9`),
 manifest, compatibility, all installed package files and component/API identities.
 The old Core pin `ae64437d072d16ebad1ed119f6f7ab9c6b459e44` is incompatible with
 this adapter. Its historical public release does not prove the new integrated
@@ -198,4 +198,10 @@ reauthorization. They cannot take over unfinished sessions or reuse old Acceptan
 Independent Acceptance, applicable isolated hooks, exact-head CI, final review and
 protected merge remain Core-managed obligations after this source handoff.
 
-The reviewed [shared execution pool producer](https://github.com/taco3064/nibfin/pull/248) separates the protected logical target from the actual dispatch repository. The Action delegates that projection to the same verified Core after approving deployment options. CLI onboarding and actual Runner cutover remain separately verified installation work.
+The current [shared-capacity correction](https://github.com/taco3064/nibfin/pull/257)
+keeps Actions Runs, Jobs and logs in each installed project. Member capacity is
+independent of project count, such as six slots shared by ten projects. The older
+central source/target projection from PR #248 is historical and is rejected by
+the official installation path. Repository-scoped ephemeral registration, native
+host assembly and live takeover remain separately verified integration work;
+the updated producer pin does not certify those capabilities.
