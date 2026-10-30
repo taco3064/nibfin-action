@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: taco3064/nibfin
-          ref: bda12320ab60a54d6145763e5950dcf88fa26f8c
+          ref: 96b2917a67a07940a03cf18b49f86ae7573ab53f
           path: .test-producer
           persist-credentials: false
       - name: Prepare reviewed producer archive
