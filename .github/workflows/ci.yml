@@ -42,8 +42,6 @@ jobs:
           mkdir "$RUNNER_TEMP/actionlint"
           tar -xzf "$archive" -C "$RUNNER_TEMP/actionlint" actionlint
           echo "$RUNNER_TEMP/actionlint" >> "$GITHUB_PATH"
-      - name: Validate GitHub workflow syntax and expressions
-        run: actionlint -color -shellcheck= -pyflakes=
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: taco3064/nibfin
@@ -56,3 +54,5 @@ jobs:
           node tooling/test-input.mjs --build .test-producer
       - name: Check maintained source and run available product tests
         run: node tooling/check.mjs
+      - name: Validate queue policy and all remaining workflow syntax
+        run: node tooling/lint-workflows.mjs
