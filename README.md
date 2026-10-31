@@ -1,19 +1,16 @@
 # Nibfin Action
 
-Thin Action adapter for the reviewed, integrated public Nibfin distribution from
-[nibfin #233](https://github.com/taco3064/nibfin/issues/233), with the reviewed
-[native Scope/Shape and maintenance candidate](https://github.com/taco3064/nibfin/pull/253), source
-`c460b5b49a05d9e532bc9ab7c8211f5a32cbd8c6`. Core owns authorization, routing,
+Thin Action adapter for public Nibfin Core 0.1.1, merged source
+`277057f3997461b868cd7fe604dc52954476b591`. Core owns authorization, routing,
 policy, custody, lifecycle, recovery, independent reviews, scheduling and merge.
-The Action supplies no grant, repair capability, retry loop, timer service or second controller.
+The Action adapts inputs/outputs and calls the same verified Core as the native
+Host. Its stage catalog is derived from that exact package.
 
-This is a **source/package candidate**, not a published Action or integrated Core
-release. Proposed Action version: **0.1.0**. `core-release.json` binds the reviewed
-Core archive (`fae1f134207f6fddc7c38fd3f1ba440287af0ce570789546258d8297ea6a0a89`),
-manifest, compatibility, all installed package files and component/API identities.
-The old Core pin `ae64437d072d16ebad1ed119f6f7ab9c6b459e44` is incompatible with
-this adapter. Its historical public release does not prove the new integrated
-package was released. Action #8's failed publication remains failed historical work.
+Action version 0.1.1 is prepared for official publication. `core-release.json`
+is the authority for exact archive, manifest, compatibility, installed file and
+component/API identities. Source tests establish source-contract coverage only;
+actual immutable publication and external Caller verification remain separate.
+Historical Action #8 publication failures remain preserved.
 
 ## Installation boundary
 
@@ -67,7 +64,7 @@ independently authorize a caller or deployment.
 Readiness module callbacks are trusted embedding capabilities, not serialized
 caller flags. `observeCapability({capability,version,sha256,signal})` must read the
 actual protected installation and return the producer's verified observation.
-The Action calls `createInstallation({version:1,expected:{packageVersion:'0.1.0',
+The Action calls `createInstallation({version:1,expected:{packageVersion:pin.version,
 coreSha256:<mapped core identity>},profile,observeCapability,runner?}).check()`.
 Lookup/resolve/wake/registration/rescue require `source-contract`; execute/compute
 require `member-runtime`, including producer runner `configuration`, `observe`
