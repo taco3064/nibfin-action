@@ -261,8 +261,7 @@ test('publication rejects unavailable immutability and invalid inputs', async ()
 });
 test('release workflow preserves source, writes and permission pins', () => {
   const w = parse(readFileSync('.github/workflows/action-release.yml', 'utf8'));
-  assert.deepEqual(Object.keys(w.on), ['push', 'workflow_dispatch']);
-  assert.deepEqual(w.on.push.branches, ['main']);
+  assert.deepEqual(Object.keys(w.on), ['workflow_dispatch']);
   assert.deepEqual(w.permissions, { contents: 'read' });
   assert.deepEqual(w.concurrency, {
     group: 'nibfin-action-release',

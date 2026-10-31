@@ -178,6 +178,12 @@ If #203 chooses a new version/reviewed compatible revision, #15 must explicitly
 refresh and independently verify the mapping; no pin is silently replaced here.
 No live release is performed or required for this source Issue.
 
+Release publication is explicitly dispatched on protected `main`, as for Core and
+CLI publication. An ordinary source or project-installation merge does not request
+a release. Prepare a new package version for changed release source, then dispatch
+the workflow; retry an existing version only to reconcile its exact original source
+and assets. A different source commit cannot reuse an immutable release version.
+
 CD retains protected main, merged-PR/source readback, immutable-release preflight,
 draft asset assembly, exact asset readback, conflict rejection and unknown-write
 reconciliation. Protect `nibfin-release` and supply its publication-only
