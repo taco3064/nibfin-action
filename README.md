@@ -1,12 +1,12 @@
 # Nibfin Action
 
-Thin Action adapter for public Nibfin Core 0.1.1, merged source
-`277057f3997461b868cd7fe604dc52954476b591`. Core owns authorization, routing,
+Thin Action adapter for public Nibfin Core 0.1.3, merged source
+`5ec1bccec47bf249c4116c060bdfcf828e44e969`. Core owns authorization, routing,
 policy, custody, lifecycle, recovery, independent reviews, scheduling and merge.
 The Action adapts inputs/outputs and calls the same verified Core as the native
 Host. Its stage catalog is derived from that exact package.
 
-Action version 0.1.1 is prepared for official publication. `core-release.json`
+Action version 0.1.2 is prepared for official publication. `core-release.json`
 is the authority for exact archive, manifest, compatibility, installed file and
 component/API identities. Source tests establish source-contract coverage only;
 actual immutable publication and external Caller verification remain separate.
