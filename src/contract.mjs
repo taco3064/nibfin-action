@@ -57,8 +57,9 @@ export function verifyCore(root) {
   need(
     pin.format === 2 &&
       pin.package === '@nibfin/core' &&
-      pin.version === '0.1.1' &&
-      pin.commit === '277057f3997461b868cd7fe604dc52954476b591' &&
+      pin.repository === 'taco3064/nibfin' &&
+      /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(pin.version) &&
+      commit(pin.commit) &&
       pin.status === 'reviewed-source',
     'mapping',
   );
